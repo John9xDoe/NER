@@ -1,6 +1,11 @@
 import logging
 import random
 
+import numpy as np
+
+from ner_model import NER
+
+
 def load_data(filepath):
     tokens, labels = [], []
     ex_tokens, ex_labels = [], []
@@ -55,7 +60,7 @@ def pad_batch(batch_tokens, batch_labels, pad_id='PAD', ignore_id=-100):
         padded_labels.append(labels + pad_len * [ignore_id])
         mask.append([1] * len(tokens) + [0] * pad_len)
 
-    return padded_tokens, padded_labels, mask
+    return np.array(padded_tokens), np.array(padded_labels), np.array(mask)
 
 def encode(tokens, labels, token2id, label2id, unk_tok='<UNK>'):
     input_ids = [token2id.get(tok, token2id[unk_tok]) for tok in tokens]
@@ -87,9 +92,22 @@ def start():
     train_tokens, test_tokens, train_labels, test_labels = train_test_split(tokens, labels, test_size=0.1, shuffle=True)
 
     train_encoded = [encode(toks, labs, token2id, label2id) for toks, labs in zip(train_tokens, train_labels)]
-
     for idx, (inputs, labels, mask) in enumerate(make_batches(train_encoded, batch_size=32)):
         print(f"{idx}: {inputs} | {labels} | {mask}")
+
+    model = NER(vocab_size = len(vocab),
+                output_dim=7,
+                embedding_dim=16,
+                lr=0.1,
+                label2id=label2id,
+                id2label=id2label
+    )
+    epochs = 10
+    X_train = make_batches(train_encoded, batch_size=32)
+    for epoch in range(epochs):
+        for X_batch, y_batch, _ in X_train:
+            loss = model.train_step(X_batch, y_batch)
+            print(f"Epoch {epoch} - loss {loss:.4f}")
 
 if __name__ == '__main__':
     start()

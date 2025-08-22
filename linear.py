@@ -16,6 +16,9 @@ class Linear:
         return x @ self.W + self.b
 
     def backward(self, grad_output):
+        print("grad_output shape:", grad_output.shape)
+        print("self.output_dim:", self.output_dim)
+
         self.grad_W = self.last_input.reshape(-1, self.input_dim).T @ grad_output.reshape(-1, self.output_dim)
         self.grad_b = grad_output.sum(axis=(0, 1))
 
